@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../QuakeReport.Domain/QuakeReport.Domain.Business/QuakeReport.Domain.Business.csproj" />
+    <ProjectReference Include="../../QuakeReport.Infra/QuakeReport.Infra.FileRepository/QuakeReport.Infra.FileRepository.csproj" />
+  </ItemGroup>
+
+</Project>
