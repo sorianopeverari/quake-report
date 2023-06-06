@@ -1,6 +1,5 @@
 ﻿using QuakeReport.Domain.Models;
 using QuakeReport.Domain.Repositories;
-using QuakeReport.Infra.FileRepository;
 
 namespace QuakeReport.Domain.Business
 {
@@ -13,9 +12,10 @@ namespace QuakeReport.Domain.Business
             this._tournamentRepository = tournamentRepository;
         }
 
-        public async Task<Tournament> GetTournament()
+        public async Task<Tournament> GetAssync()
         {
-            return await _tournamentRepository.GetTournament();
+            Tournament tournament = await _tournamentRepository.GetAsync();
+            return tournament;
         }
     }
 }

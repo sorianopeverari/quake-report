@@ -4,7 +4,7 @@ using System.Text;
 
 namespace QuakeReport.App.Parser
 {
-    public static class MatchKillJson
+    public static class GameKillByPlayerJson
     {
         public static string Write(Tournament tournament)
         {
@@ -14,22 +14,28 @@ namespace QuakeReport.App.Parser
                 {
                     writer.WriteStartObject();
 
-                    foreach(Match m in tournament.Matches.Values)
+                    foreach(Game game in tournament.Games)
                     {
-                        writer.WriteStartObject(String.Concat("game_", m.Number));
-                        writer.WriteNumber("total_kills", m.Kills.Count);
+                        writer.WriteStartObject(String.Concat("game_", game.Number));
+                        writer.WriteNumber("total_kills", game.KillScore);
                         
                         writer.WriteStartArray("players");
-                        foreach(Player p in m.Players.Values)
+                        foreach(Player player in game.PlayersById.Values)
                         {
-                            writer.WriteStringValue(p.NickName);
+                            if(!player.Hidden)
+                            {
+                                writer.WriteStringValue(player.NickName);
+                            }
                         }
                         writer.WriteEndArray();
                         
                         writer.WriteStartObject("kills");
-                        foreach(KeyValuePair<int,int> kv in m.PlayerKiller)
+                        foreach(Player player in game.PlayersById.Values)
                         {
-                            writer.WriteNumber(m.Players[kv.Key].NickName, kv.Value);
+                            if(!player.Hidden)
+                            {
+                                writer.WriteNumber(player.NickName, player.KillScore);
+                            }
                         }
                         writer.WriteEndObject();
                         writer.WriteEndObject();
