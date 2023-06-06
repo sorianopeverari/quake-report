@@ -3,12 +3,20 @@ using QuakeReport.Domain.Business;
 using QuakeReport.Domain.Models;
 using Microsoft.Extensions.DependencyInjection;
 using QuakeReport.Infra.FileRepository;
+using QuakeReport.Domain.Repositories;
 
-// TODO DI
-TournamentBusiness tb = new TournamentBusiness(new TournamentFileRepository()); 
-Tournament t = await tb.GetTournament();
+ServiceProvider serviceProvider = new ServiceCollection()
+    .AddLogging()
+    .AddSingleton<ITournamentRepository, TournamentFileRepository>()
+    .AddSingleton<TournamentBusiness>()
+    .AddSingleton<GameBusiness>()
+    .BuildServiceProvider();
 
-Console.WriteLine(MatchKillJson.Write(t));
-Console.WriteLine("");
-Console.Write(MatchDeathCauseJson.Write(t));
-Console.WriteLine("");
+TournamentBusiness tournamentBusiness = serviceProvider.GetRequiredService<TournamentBusiness>(); 
+Tournament tournament = await tournamentBusiness.GetAssync();
+
+GameBusiness gameBusiness = serviceProvider.GetRequiredService<GameBusiness>();
+gameBusiness.SumScore(tournament);
+
+Console.WriteLine(GameKillByPlayerJson.Write(tournament));
+Console.Write(GameDeathCauseJson.Write(tournament));
