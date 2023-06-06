@@ -8,9 +8,9 @@ namespace QuakeReport.Domain.Business
     {
         private readonly ITournamentRepository _tournamentRepository;
 
-        public TournamentBusiness()
+        public TournamentBusiness(ITournamentRepository tournamentRepository)
         {
-            _tournamentRepository = new TournamentFileRepository();
+            this._tournamentRepository = tournamentRepository;
         }
 
         public async Task<Tournament> GetTournament()
