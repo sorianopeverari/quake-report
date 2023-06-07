@@ -33,7 +33,7 @@ sudo docker build . -t quake-report:1.0
 
 # Usage
 
-Running Docker Container and remove after:
+Running Docker Container and removing it after:
 
 ```shell
 sudo docker run -it --rm quake-report:1.0
