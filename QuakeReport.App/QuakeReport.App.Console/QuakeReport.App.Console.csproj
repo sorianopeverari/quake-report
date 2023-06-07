@@ -12,7 +12,7 @@
  </ItemGroup>
 
  <ItemGroup>
-    <Content Include="qgames.log">
+    <Content Include="qgames.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>  
  </ItemGroup>
