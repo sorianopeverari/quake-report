@@ -1,51 +1,69 @@
 ﻿using QuakeReport.Domain.Repositories;
 using QuakeReport.Domain.Models;
-using QuakeMatch = QuakeReport.Domain.Models.Match;
 using System.Text.RegularExpressions;
-using Match = System.Text.RegularExpressions.Match;
+using QuakeReport.Domain.Models.Exceptions;
 
 namespace QuakeReport.Infra.FileRepository
 {
     public class TournamentFileRepository : ITournamentRepository
     {
-        private const string _pattern = @"(\d{1,2}:\d\d )(.*?)[:](.*)[^\n]*";
-        private const string _path = @"../../qgames.log";
+        private const string _patternEvent = @"(\d{1,2}:\d\d )(.*?)[:](.*)[^\n]*";
+        
+        private const string _path = @"qgames.txt";
 
-        private QuakeMatch? _currentMatch; 
-
-        public async Task<Tournament> GetTournament()
+        public async Task<Tournament> GetAsync()
         {
+            Regex expression = new Regex(_patternEvent);
+
             Tournament tournament = new Tournament();
             
             try
             {
                 using (StreamReader sr = new StreamReader(_path))
                 {
+                    int numberLine = 0;
                     while (sr.Peek() >= 0)
                     {
-                        string? line = sr.ReadLine();
+                        numberLine++;
+                        string? dataLine = sr.ReadLine();
 
-                        if (line == null) 
+                        if (String.IsNullOrWhiteSpace(dataLine)) 
                         {
+                            Console.WriteLine(String.Format("Line {0} is empty"));
                             continue;
                         }
 
-                        foreach (Match m in Regex.Matches(line, _pattern))
+                        Match m = expression.Match(dataLine);
+
+                        if(m.Success)
                         {
                             string type = m.Groups[2].ToString().Trim();
                             string time = m.Groups[1].ToString().Trim();
                             string content = m.Groups[3].ToString().Trim();
 
-                            switch(type)
+                            try
                             {
-                                default:
-                                    continue;
-                                case "InitGame": this.InitGame(tournament, time);                                    
+                                switch(type)
+                                {
+                                    default:
+                                        continue;
+                                    case "InitGame":
+                                    this.BeginGame(tournament, time);
                                     break;
-                                case "ClientUserinfoChanged": this.ClientUserInfoChanged(tournament, time, content);
+                                    case "ShutdownGame": 
+                                    this.EndGame(tournament, time);
                                     break;
-                                case "Kill": this.Kill(tournament, time, content);
-                                  break;
+                                    case "ClientUserinfoChanged": 
+                                        this.SaveInfoPlayer(tournament, content);
+                                    break;
+                                    case "Kill": 
+                                        this.Kill(tournament, content);
+                                    break;
+                                }
+                            }
+                            catch(Exception ex)
+                            {
+                                throw new ValidationException(String.Format("Line {0} - Invalid format)", numberLine), ex);
                             }
                         }
                     }
@@ -59,31 +77,56 @@ namespace QuakeReport.Infra.FileRepository
             return await Task.FromResult(tournament);
         }
 
-        private QuakeMatch InitGame(Tournament tournament, string time)
+        private void BeginGame(Tournament tournament, string time)
         {
-            _currentMatch = tournament.GetCurrentMatch(time);
-            return _currentMatch;
+            tournament.BeginGame(TimeToInt(time));
         }
 
-        private void ClientUserInfoChanged(Tournament tournament, string time, string content)
+        private void EndGame(Tournament tournament, string time)
         {
-            Player p = new Player();
-            p.Id = Convert.ToInt32(content.Substring(0, 1));
-            
+            tournament.EndGame(TimeToInt(time));
+        }
+
+        private void SaveInfoPlayer(Tournament tournament, string content)
+        {
+            if(tournament.CurrentGame == null)
+            {
+                throw new InternalErrorException("Current game is null");
+            }
+
+            tournament.CurrentGame.SaveInfoPlayer(this.ToPlayer(content));
+        }
+
+        private Player ToPlayer(string content)
+        {
+            Player player = new Player();
+            player.Id = Convert.ToInt32(content.Substring(0, 1));
             int nameBegin = content.IndexOf("n\\");
 			int nameEnd = content.IndexOf("\\t");
-
-            p.NickName = content.Substring(nameBegin + 2, nameEnd - 4);
-            _currentMatch?.AddInfoPlayer(p);
+            player.NickName = content.Substring(nameBegin + 2, nameEnd - 4);
+            return player;
         }
 
-        private void Kill(Tournament tournament, string time, string content)
+        private void Kill(Tournament tournament, string content)
         {
             int end = content.IndexOf(":");
             string ids = content.Substring(0, end);
             string[] idsKill = ids.Trim().Split(" ");
-            Kill kill = new Kill(idsKill[0], idsKill[1], idsKill[2]);
-            _currentMatch?.AddKill(kill);
+
+            if(tournament.CurrentGame == null)
+            {
+                throw new InternalErrorException("Current game is null");
+            }
+
+            tournament.CurrentGame.AddKill(idsKill[0], idsKill[1], idsKill[2]);
+        }
+
+        public int TimeToInt(string time)
+        {
+            string[] minutesSeconds = time.Trim().Split(":");
+            int seconds = Convert.ToInt32(minutesSeconds[0])*60;
+            seconds =+ Convert.ToInt32(minutesSeconds[1]);
+            return seconds;
         }
     }
 }

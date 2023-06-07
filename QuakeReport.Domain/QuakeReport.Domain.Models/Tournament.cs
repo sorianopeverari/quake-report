@@ -1,61 +1,45 @@
-﻿namespace QuakeReport.Domain.Models
+﻿using QuakeReport.Domain.Models.Exceptions;
+
+namespace QuakeReport.Domain.Models
 {
     public class Tournament
     {
         public string Id { get; set; } = String.Empty;
-        public SortedDictionary<int, Match> Matches { get; } = new SortedDictionary<int, Match>();
-        private int _lastMatchNumber;
+        public IList<Game> Games { get; } = new List<Game>();
+        public Game? CurrentGame { get; set; }
 
-        public Tournament()
+        public Game BeginGame(int beginSeconds)
         {
-        }
-
-        public Tournament(string id)
-        {
-            this.Id = id;
-        }
-
-        public Match GetCurrentMatch(string time)
-        {
-            int seconds = this.TimeToInt(time);
-
-            if(_lastMatchNumber == 0)
+            if(this.CurrentGame == null)
             {
-                Match m = new Match(seconds);
-                this.Matches.Add(m.Number, m);
-                _lastMatchNumber = m.Number;
-                return this.Matches[_lastMatchNumber];
+                Game game = new Game();
+                this.Games.Add(game);
+                this.CurrentGame = game;
+                return this.CurrentGame;
             }
-            
-            return this.GetCurrentMatch(seconds);
-        }
 
-        private Match GetCurrentMatch(int time)
-        {
-            Match m;
-
-            if(this.Matches[_lastMatchNumber].LastEvent > time)
+            if(beginSeconds > this.CurrentGame.LastEndGameSeconds)
             {
-                m = new Match(time) { Number = this.Matches[_lastMatchNumber].Number + 1 };
-                this.Matches.Add(m.Number, m);
+                this.CurrentGame.Level++;
+                return this.CurrentGame;
             }
             else
             {
-                this.Matches[_lastMatchNumber].Level++;
-                m = this.Matches[_lastMatchNumber]; 
+                Game game = new Game();
+                game.Number = this.CurrentGame.Number + 1;
+                this.Games.Add(game);
+                return this.CurrentGame = game;
             }
-
-            _lastMatchNumber = m.Number;
-            this.Matches[_lastMatchNumber].LastEvent = time;
-            return m;
         }
 
-        public int TimeToInt(string time)
+        public void EndGame(int seconds)
         {
-            string[] minutesSeconds = time.Trim().Split(":");
-            int seconds = Convert.ToInt32(minutesSeconds[0])*60;
-            seconds =+ Convert.ToInt32(minutesSeconds[1]);
-            return seconds;
+            if(this.CurrentGame == null)
+            {
+                throw new InternalErrorException("Current game is null");
+            }
+
+            this.CurrentGame.LastEndGameSeconds = seconds;
         }
     }
 }

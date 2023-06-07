@@ -22,7 +22,9 @@
   </ItemGroup>
   
   <ItemGroup>
+  
     <ProjectReference Include="..\..\QuakeReport.Domain\QuakeReport.Domain.Models\QuakeReport.Domain.Models.csproj" />
+    <ProjectReference Include="..\..\QuakeReport.Domain\QuakeReport.Domain.Business\QuakeReport.Domain.Business.csproj" />
   </ItemGroup>
 
 </Project>
