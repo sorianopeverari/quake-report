@@ -9,7 +9,7 @@ namespace QuakeReport.Infra.FileRepository
     {
         private const string _patternEvent = @"(\d{1,2}:\d\d )(.*?)[:](.*)[^\n]*";
         
-        private const string _path = @"qgames.log";
+        private const string _path = @"qgames.txt";
 
         public async Task<Tournament> GetAsync()
         {
